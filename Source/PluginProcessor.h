@@ -74,6 +74,7 @@ public:
 private:
     // Use a bunch of aliases here to shorten down all the JUCE namespaces
     using Filter = juce::dsp::IIR::Filter<float>;
+    using Coefficients = Filter::CoefficientsPtr;
     // each fiter type has a response type of 12db/Oct. If we want a filter to do 48db/Oct, then we need to chain together 4 filters.
     // This will require using a dsp processor chain to process all the audio as if it were a 48db/Oct filter.
     using CutFilter = juce::dsp::ProcessorChain<Filter, Filter, Filter, Filter>;
@@ -88,6 +89,38 @@ private:
         HighCut
     };
 
+    void updatePeakFilter(const ChainSettings& chainSettings);
+    static void updateCoefficients(Coefficients& old, const Coefficients& replacements);
+    template<typename ChainType, typename CoefficientType>
+    // this needs to be done here because of the template names
+    void updateCutFilter(ChainType& lowCut, const CoefficientType& cutCoefficients, const Slope& lowCutSlope) {
+        lowCut.setBypassed<0>(true);
+        lowCut.setBypassed<1>(true);
+        lowCut.setBypassed<2>(true);
+        lowCut.setBypassed<3>(true);
+
+        switch (lowCutSlope)
+        {
+            // trying to be clever, this might not work    
+        case Slope_48:
+            // May need to call template before each of the methods (i.e. leftLowCut.template get<>) (the video example needed to do this)
+            updateCoefficients(lowCut.get<3>().coefficients, cutCoefficients[3]);
+            lowCut.setBypassed<3>(false);
+        case Slope_36:
+            //*LowCut.get<2>().coefficients = *cutCoefficients[2];
+            updateCoefficients(lowCut.get<2>().coefficients, cutCoefficients[2]);
+            lowCut.setBypassed<2>(false);
+        case Slope_24:
+            //*LowCut.get<1>().coefficients = *cutCoefficients[1];
+            updateCoefficients(lowCut.get<1>().coefficients, cutCoefficients[1]);
+            lowCut.setBypassed<1>(false);
+        case Slope_12:
+            //*LowCut.get<0>().coefficients = *cutCoefficients[0];
+            updateCoefficients(lowCut.get<0>().coefficients, cutCoefficients[0]);
+            lowCut.setBypassed<0>(false);
+            break;
+        }
+    }
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SimpleEQAudioProcessor)
 };
