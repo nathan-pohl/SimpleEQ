@@ -92,35 +92,13 @@ private:
     void updatePeakFilter(const ChainSettings& chainSettings);
     static void updateCoefficients(Coefficients& old, const Coefficients& replacements);
     template<typename ChainType, typename CoefficientType>
-    // this needs to be done here because of the template names
-    void updateCutFilter(ChainType& lowCut, const CoefficientType& cutCoefficients, const Slope& lowCutSlope) {
-        lowCut.setBypassed<0>(true);
-        lowCut.setBypassed<1>(true);
-        lowCut.setBypassed<2>(true);
-        lowCut.setBypassed<3>(true);
+    void updateCutFilter(ChainType& lowCut, const CoefficientType& cutCoefficients, const Slope& lowCutSlope); 
 
-        switch (lowCutSlope)
-        {
-            // trying to be clever, this might not work    
-        case Slope_48:
-            // May need to call template before each of the methods (i.e. leftLowCut.template get<>) (the video example needed to do this)
-            updateCoefficients(lowCut.get<3>().coefficients, cutCoefficients[3]);
-            lowCut.setBypassed<3>(false);
-        case Slope_36:
-            //*LowCut.get<2>().coefficients = *cutCoefficients[2];
-            updateCoefficients(lowCut.get<2>().coefficients, cutCoefficients[2]);
-            lowCut.setBypassed<2>(false);
-        case Slope_24:
-            //*LowCut.get<1>().coefficients = *cutCoefficients[1];
-            updateCoefficients(lowCut.get<1>().coefficients, cutCoefficients[1]);
-            lowCut.setBypassed<1>(false);
-        case Slope_12:
-            //*LowCut.get<0>().coefficients = *cutCoefficients[0];
-            updateCoefficients(lowCut.get<0>().coefficients, cutCoefficients[0]);
-            lowCut.setBypassed<0>(false);
-            break;
-        }
-    }
+    void updateLowCutFilter(const ChainSettings& chainSettings);
+    void updateHighCutFilter(const ChainSettings& chainSettings);
+
+    void updateFilters();
+
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SimpleEQAudioProcessor)
 };
