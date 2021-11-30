@@ -60,8 +60,6 @@ private:
 
     ResponseCurveComponent responseCurveComponent;
 
-    std::vector<juce::Component*> getComponents();
-
     using APVTS = juce::AudioProcessorValueTreeState;
     using Attachment = APVTS::SliderAttachment;
 
@@ -72,6 +70,8 @@ private:
                highCutFreqSliderAttachment, 
                lowCutSlopeSliderAttachment, 
                highCutSlopeSliderAttachment;
+
+    std::vector<juce::Component*> getComponents();
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (SimpleEQAudioProcessorEditor)
 };

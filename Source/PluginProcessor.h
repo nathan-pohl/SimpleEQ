@@ -41,33 +41,37 @@ enum ChainPositions {
 };
 
 void updateCoefficients(Coefficients& old, const Coefficients& replacements);
-template<typename ChainType, typename CoefficientType>
-void updateCutFilter(ChainType& lowCut, const CoefficientType& cutCoefficients, const Slope& lowCutSlope) {
-    lowCut.setBypassed<0>(true);
-    lowCut.setBypassed<1>(true);
-    lowCut.setBypassed<2>(true);
-    lowCut.setBypassed<3>(true);
 
-    switch (lowCutSlope)
+Coefficients makePeakFilter(const ChainSettings& chainSettings, double sampleRate);
+
+// I think the template is just being used to avoid typing out long typenames, but I'm not quite sure
+template<int Index, typename ChainType, typename CoefficientType>
+void update(ChainType& chain, const CoefficientType& coefficients) {
+    // May need to call template before each of the methods (i.e. chain.template get<>) (the video example needed to do this)
+    updateCoefficients(chain.template get<Index>().coefficients, coefficients[Index]);
+    chain.template setBypassed<Index>(false);
+}
+
+template<typename ChainType, typename CoefficientType>
+void updateCutFilter(ChainType& chain, const CoefficientType& cutCoefficients, const Slope& slope) {
+    chain.setBypassed<0>(true);
+    chain.setBypassed<1>(true);
+    chain.setBypassed<2>(true);
+    chain.setBypassed<3>(true);
+
+    switch (slope)
     {
     case Slope_48:
-        // May need to call template before each of the methods (i.e. leftLowCut.template get<>) (the video example needed to do this)
-        updateCoefficients(lowCut.get<3>().coefficients, cutCoefficients[3]);
-        lowCut.setBypassed<3>(false);
+        update<3>(chain, cutCoefficients);
     case Slope_36:
-        updateCoefficients(lowCut.get<2>().coefficients, cutCoefficients[2]);
-        lowCut.setBypassed<2>(false);
+        update<2>(chain, cutCoefficients);
     case Slope_24:
-        updateCoefficients(lowCut.get<1>().coefficients, cutCoefficients[1]);
-        lowCut.setBypassed<1>(false);
+        update<1>(chain, cutCoefficients);
     case Slope_12:
-        updateCoefficients(lowCut.get<0>().coefficients, cutCoefficients[0]);
-        lowCut.setBypassed<0>(false);
+        update<0>(chain, cutCoefficients);
         break;
     }
 }
-
-Coefficients makePeakFilter(const ChainSettings& chainSettings, double sampleRate);
 
 inline auto makeLowCutFilter(const ChainSettings& chainSettings, double sampleRate) {
     return juce::dsp::FilterDesign<float>::designIIRHighpassHighOrderButterworthMethod(chainSettings.lowCutFreq,

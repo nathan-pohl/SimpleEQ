@@ -31,6 +31,7 @@ void ResponseCurveComponent::parameterValueChanged(int parameterIndex, float new
 
 void ResponseCurveComponent::timerCallback() {
     if (parametersChanged.compareAndSetBool(false, true)) {
+        DBG("params changed");
         // update the monochain
         auto chainSettings = getChainSettings(audioProcessor.apvts);
         auto peakCoefficients = makePeakFilter(chainSettings, audioProcessor.getSampleRate());
@@ -52,7 +53,6 @@ void ResponseCurveComponent::paint(juce::Graphics& g) {
     using namespace juce;
     g.fillAll(Colours::black);
 
-    //auto bounds = getLocalBounds();
     auto responseArea = getLocalBounds();
 
     auto width = responseArea.getWidth();
