@@ -42,7 +42,30 @@ enum ChainPositions {
 
 void updateCoefficients(Coefficients& old, const Coefficients& replacements);
 template<typename ChainType, typename CoefficientType>
-void updateCutFilter(ChainType& lowCut, const CoefficientType& cutCoefficients, const Slope& lowCutSlope);
+void updateCutFilter(ChainType& lowCut, const CoefficientType& cutCoefficients, const Slope& lowCutSlope) {
+    lowCut.setBypassed<0>(true);
+    lowCut.setBypassed<1>(true);
+    lowCut.setBypassed<2>(true);
+    lowCut.setBypassed<3>(true);
+
+    switch (lowCutSlope)
+    {
+    case Slope_48:
+        // May need to call template before each of the methods (i.e. leftLowCut.template get<>) (the video example needed to do this)
+        updateCoefficients(lowCut.get<3>().coefficients, cutCoefficients[3]);
+        lowCut.setBypassed<3>(false);
+    case Slope_36:
+        updateCoefficients(lowCut.get<2>().coefficients, cutCoefficients[2]);
+        lowCut.setBypassed<2>(false);
+    case Slope_24:
+        updateCoefficients(lowCut.get<1>().coefficients, cutCoefficients[1]);
+        lowCut.setBypassed<1>(false);
+    case Slope_12:
+        updateCoefficients(lowCut.get<0>().coefficients, cutCoefficients[0]);
+        lowCut.setBypassed<0>(false);
+        break;
+    }
+}
 
 Coefficients makePeakFilter(const ChainSettings& chainSettings, double sampleRate);
 
