@@ -26,7 +26,7 @@ void LookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, i
         Path p;
         Rectangle<float> r;
         r.setLeft(center.getX() - 2); // Two pixels left of center
-        r.setRight(center.getY() + 2); // Two pixels to right of center
+        r.setRight(center.getX() + 2); // Two pixels to right of center
         r.setTop(bounds.getY());
         r.setBottom(center.getY() - rswl->getTextHeight() * 1.5);
         p.addRoundedRectangle(r, 2.f);
