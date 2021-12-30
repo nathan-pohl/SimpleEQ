@@ -74,6 +74,28 @@ void RotarySliderWithLabels::paint(juce::Graphics& g) {
                                       startAngle, 
                                       endAngle, 
                                       *this);
+
+    auto center = sliderBounds.toFloat().getCentre();
+    auto radius = sliderBounds.getWidth() * 0.5f;
+    g.setColour(Colour(0u, 172u, 1u));
+    g.setFont(getTextHeight());
+    
+    auto numChoices = labels.size();
+    for (int i = 0; i < numChoices; ++i) {
+        auto pos = labels[i].pos;
+        jassert(0.f <= pos);
+        jassert(pos <= 1.f);
+
+        // This logic determines where to place the labels for the bounding points for each slider (e.g. 20 Hz to 20KHz)
+        auto angle = jmap(pos, 0.f, 1.f, startAngle, endAngle);
+        auto c = center.getPointOnCircumference(radius + getTextHeight() * 0.5f + 1, angle);
+        Rectangle<float> r;
+        auto str = labels[i].label;
+        r.setSize(g.getCurrentFont().getStringWidth(str), getTextHeight());
+        r.setCentre(c);
+        r.setY(r.getY() + getTextHeight());
+        g.drawFittedText(str, r.toNearestInt(), juce::Justification::centred, 1);
+    }
 }
 
 juce::Rectangle<int> RotarySliderWithLabels::getSliderBounds() const {
@@ -255,11 +277,27 @@ SimpleEQAudioProcessorEditor::SimpleEQAudioProcessorEditor (SimpleEQAudioProcess
     lowCutSlopeSliderAttachment(audioProcessor.apvts, "LowCut Slope", lowCutSlopeSlider),
     highCutSlopeSliderAttachment(audioProcessor.apvts, "HighCut Slope", highCutSlopeSlider)
 {
+    // Min/max range labels for each slider
+    peakFreqSlider.labels.add({ 0.f, "20Hz" });
+    peakFreqSlider.labels.add({ 1.f, "20KHz" });
+    peakGainSlider.labels.add({ 0.f, "-24dB" });
+    peakGainSlider.labels.add({ 1.f, "24dB" });
+    peakQualitySlider.labels.add({ 0.f, "0.1" });
+    peakQualitySlider.labels.add({ 1.f, "10.0" });
+    lowCutFreqSlider.labels.add({ 0.f, "20Hz" });
+    lowCutFreqSlider.labels.add({ 1.f, "20KHz" });
+    highCutFreqSlider.labels.add({ 0.f, "20Hz" });
+    highCutFreqSlider.labels.add({ 1.f, "20KHz" });
+    lowCutSlopeSlider.labels.add({ 0.f, "12dB/Oct" });
+    lowCutSlopeSlider.labels.add({ 1.f, "48dB/Oct" });
+    highCutSlopeSlider.labels.add({ 0.f, "12dB/Oct" });
+    highCutSlopeSlider.labels.add({ 1.f, "48dB/Oct" });
+
     for (auto* comp : getComponents()) {
         addAndMakeVisible(comp);
     }
 
-    setSize (600, 400);
+    setSize (600, 480);
 }
 
 SimpleEQAudioProcessorEditor::~SimpleEQAudioProcessorEditor()
@@ -277,10 +315,12 @@ void SimpleEQAudioProcessorEditor::paint (juce::Graphics& g)
 void SimpleEQAudioProcessorEditor::resized()
 {
     auto bounds = getLocalBounds();
-    auto responseArea = bounds.removeFromTop(bounds.getHeight() * 0.33);
+    float heightRatio = 25.0f / 100.f; // JUCE_LIVE_CONSTANT(33) / 100.f; //(use this to dial in the size while running plugin)
+    auto responseArea = bounds.removeFromTop(bounds.getHeight() * heightRatio);
 
     responseCurveComponent.setBounds(responseArea);
 
+    bounds.removeFromTop(5); // Create a little space between the response curve and dials
     auto lowCutArea = bounds.removeFromLeft(bounds.getWidth() * 0.33);
     auto highCutArea = bounds.removeFromRight(bounds.getWidth() * 0.5);
 
