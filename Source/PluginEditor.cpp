@@ -12,7 +12,6 @@
 void LookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height, float sliderPosProportional, float rotaryStartAngle, float rotaryEndAngle, juce::Slider& slider) {
     using namespace juce;
 
-
     // background of the Slider
     auto bounds = Rectangle<float>(x, y, width, height);
     g.setColour(Colour(97u, 18u, 167u)); // Purple background of ellipse
@@ -21,6 +20,8 @@ void LookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, i
     g.drawEllipse(bounds, 1.f);
 
     if (auto* rswl = dynamic_cast<RotarySliderWithLabels*> (&slider)) {
+        jassert(rotaryStartAngle < rotaryEndAngle); // Check to make sure the angles are set right
+
         // Draw the rectangle that forms the pointer of the rotary dial // TODO it is not drawing properly
         auto center = bounds.getCentre();
         Path p;
@@ -31,10 +32,8 @@ void LookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, i
         r.setBottom(center.getY() - rswl->getTextHeight() * 1.5);
         p.addRoundedRectangle(r, 2.f);
 
-        jassert(rotaryStartAngle < rotaryEndAngle); // Check to make sure the angles are set right
         auto sliderAngleRadians = jmap(sliderPosProportional, 0.f, 1.f, rotaryStartAngle, rotaryEndAngle); // Map the slider angle to be between the bounding angles
         p.applyTransform(AffineTransform().rotated(sliderAngleRadians, center.getX(), center.getY()));
-        //g.setColour(Colour(255u, 154u, 1u));
         g.fillPath(p);
 
         g.setFont(rswl->getTextHeight());
@@ -62,10 +61,10 @@ void RotarySliderWithLabels::paint(juce::Graphics& g) {
     auto range = getRange();
     auto sliderBounds = getSliderBounds();
     // Draw bounds of the slider
-    g.setColour(Colours::red);
-    g.drawRect(getLocalBounds());
-    g.setColour(Colours::yellow);
-    g.drawRect(sliderBounds);
+    //g.setColour(Colours::red);
+    //g.drawRect(getLocalBounds());
+    //g.setColour(Colours::yellow);
+    //g.drawRect(sliderBounds);
     getLookAndFeel().drawRotarySlider(g, 
                                       sliderBounds.getX(), 
                                       sliderBounds.getY(), 
@@ -90,7 +89,35 @@ juce::Rectangle<int> RotarySliderWithLabels::getSliderBounds() const {
 
 //int RotarySliderWithLabels::getTextHeight() const { return 14; }
 juce::String RotarySliderWithLabels::getDisplayString() const {
-    return juce::String(getValue());
+    // If the parameter is a choice parameter, show the choice name e.g. 12 db/Oct
+    if (auto* choiceParam = dynamic_cast<juce::AudioParameterChoice*>(param)) {
+        return choiceParam->getCurrentChoiceName();
+    }
+
+    juce::String str;
+    bool addK = false; // For Kilohertz
+
+    // Only Float parameters are supported here
+    if (auto* floatParam = dynamic_cast<juce::AudioParameterFloat*>(param)) {
+        float val = getValue();
+        if (val > 999.f) {
+            val /= 1000.f;
+            addK = true; // Use KHz for units
+        }
+        str = juce::String(val, (addK ? 2 : 0)); // If we are using KHz, only use 2 decimal places
+        if (suffix.isNotEmpty()) {
+            str << " ";
+            if (addK) {
+                str << "K";
+            }
+            str << suffix;
+        }
+
+        return str;
+    }
+    else {
+        jassertfalse;
+    }
 }
 
 //==============================================================================
