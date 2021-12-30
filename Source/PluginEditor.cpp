@@ -276,9 +276,9 @@ void ResponseCurveComponent::resized() {
     int width = renderArea.getWidth();
 
     Array<float> freqs{
-        20, 30, 40, 50, 100,
-        200, 300, 400, 500, 1000,
-        2000, 3000, 4000, 5000, 10000,
+        20, /*30, 40,*/ 50, 100,
+        200, /*300, 400,*/ 500, 1000,
+        2000, /*3000, 4000,*/ 5000, 10000,
         20000
     };
 
@@ -297,10 +297,40 @@ void ResponseCurveComponent::resized() {
     Array<float> gain{
         -24, -12, 0, 12, 24
     };
+
     for (float gDb : gain) {
         float y = jmap(gDb, -24.f, 24.f, float(getHeight()), 0.f);
         g.setColour(gDb == 0.f ? Colour(0u, 172u, 1u): Colours::darkgrey); // If gain is 0dB draw a green line, otherwise use dark grey
         g.drawHorizontalLine(y, left, right);
+    }
+
+    // Draw labels
+    g.setColour(Colours::lightgrey);
+    const int fontHeight = 10;
+    g.setFont(fontHeight);
+
+    for (int i = 0; i < freqs.size(); ++i) {
+        float f = freqs[i];
+        float x = xs[i];
+
+        bool addK = false;
+        String str;
+        if (f > 999.f) {
+            addK = true;
+            f /= 1000.f;
+        }
+        str << f;
+        if (addK) {
+            str << "K";
+        }
+        str << "Hz";
+        int textWidth = g.getCurrentFont().getStringWidth(str);
+        Rectangle<int> r;
+        r.setSize(textWidth, fontHeight);
+        r.setCentre(x, 0);
+        r.setY(1);
+
+        g.drawFittedText(str, r, juce::Justification::centred, 1);
     }
 }
 
