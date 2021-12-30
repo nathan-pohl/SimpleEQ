@@ -9,6 +9,62 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 
+void LookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height, float sliderPosProportional, float rotaryStartAngle, float rotaryEndAngle, juce::Slider& slider) {
+    using namespace juce;
+
+
+    // background of the Slider
+    auto bounds = Rectangle<float>(x, y, width, height);
+    g.setColour(Colour(97u, 18u, 167u)); // Purple background of ellipse
+    g.fillEllipse(bounds);
+    g.setColour(Colour(255u, 154u, 1u)); // Orange border of ellipse
+    g.drawEllipse(bounds, 1.f);
+
+    // Draw the rectangle that forms the pointer of the rotary dial // TODO it is not drawing properly
+    auto center = bounds.getCentre();
+    Path p;
+    Rectangle<float> r;
+    r.setLeft(center.getX() - 2); // Two pixels left of center
+    r.setRight(center.getY() + 2); // Two pixels to right of center
+    r.setTop(bounds.getY());
+    r.setBottom(center.getY());
+    p.addRectangle(r);
+    jassert(rotaryStartAngle < rotaryEndAngle); // Check to make sure the angles are set right
+    auto sliderAngleRadians = jmap(sliderPosProportional, 0.f, 1.f, rotaryStartAngle, rotaryEndAngle); // Map the slider angle to be between the bounding angles
+    p.applyTransform(AffineTransform().rotated(sliderAngleRadians, center.getX(), center.getY()));
+    //g.setColour(Colour(255u, 154u, 1u));
+    g.fillPath(p);
+}
+
+//==============================================================================
+void RotarySliderWithLabels::paint(juce::Graphics& g) {
+    using namespace juce;
+    // 7 o'clock is where slider draws value of zero, 5 o'clock is where slider draws value of one
+    auto startAngle = degreesToRadians(180.f + 45.f); // 7 o'clock basically
+    auto endAngle = degreesToRadians(180.f - 45.f) + MathConstants<float>::twoPi; // 5 o'clock basically - needs a full rotation to put it at the right angle though, otherwise slider will go the wrong way
+
+    auto range = getRange();
+    auto sliderBounds = getSliderBounds();
+    getLookAndFeel().drawRotarySlider(g, 
+                                      sliderBounds.getX(), 
+                                      sliderBounds.getY(), 
+                                      sliderBounds.getWidth(), 
+                                      sliderBounds.getHeight(), 
+                                      jmap(getValue(), range.getStart(), range.getEnd(), 0.0, 1.0),  // normalize values in the range
+                                      startAngle, 
+                                      endAngle, 
+                                      *this);
+}
+
+juce::Rectangle<int> RotarySliderWithLabels::getSliderBounds() const {
+    // TODO adjust this
+    return getLocalBounds();
+}
+
+//int RotarySliderWithLabels::getTextHeight() const { return 14; }
+//juce::String RotarySliderWithLabels::getDisplayString() const;
+
+//==============================================================================
 ResponseCurveComponent::ResponseCurveComponent(SimpleEQAudioProcessor& p) : audioProcessor(p) {
     const auto& params = audioProcessor.getParameters();
     for (auto param : params) {
