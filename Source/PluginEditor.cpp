@@ -348,6 +348,16 @@ void ResponseCurveComponent::resized() {
         r.setCentre(r.getCentreX(), y);
         g.setColour(gDb == 0.f ? Colour(0u, 172u, 1u) : Colours::lightgrey); // If gain is 0dB draw a green line, otherwise use light grey
         g.drawFittedText(str, r, juce::Justification::centred, 1);
+
+        // draw labels on left side of response curve for the spectrum analyzer
+        // the range here needs to go from 0dB to -48dB, so we can simply subtract 24dB from our existing gain array to get these numbers
+        str.clear();
+        str << (gDb - 24.f);
+        r.setX(1);
+        textWidth = g.getCurrentFont().getStringWidth(str);
+        r.setSize(textWidth, fontHeight);
+        g.setColour(Colours::lightgrey);
+        g.drawFittedText(str, r, juce::Justification::centred, 1);
     }
 }
 
