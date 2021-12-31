@@ -171,6 +171,25 @@ private:
     juce::String suffix;
 };
 
+struct PathProducer {
+    PathProducer(SingleChannelSampleFifo<SimpleEQAudioProcessor::BlockType>& scsf) : channelFifo(&scsf) {
+        // use order of 2048 for average resolution in lower end of spectrum
+        // e.g. 48000 sample rate / 2048 order = 23Hz resolution
+        // meaning not a lot of resolution at bass frequencies, but high resolution at high frequencies
+        // using higher order rates gives better resolution at lower frequencies, at the expense of more CPU
+        fftDataGenerator.changeOrder(FFTOrder::order2048);
+        monoBuffer.setSize(1, fftDataGenerator.getFFtSize());
+    }
+    void process(juce::Rectangle<float> fftBounds, double sampleRate);
+    juce::Path getPath() { return fftPath; }
+private:
+    SingleChannelSampleFifo<SimpleEQAudioProcessor::BlockType>* channelFifo;
+    juce::AudioBuffer<float> monoBuffer;
+    FFTDataGenerator<std::vector<float>> fftDataGenerator;
+    AnalyzerPathGenerator<juce::Path> pathProducer;
+    juce::Path fftPath;
+};
+
 struct ResponseCurveComponent : juce::Component, juce::AudioProcessorParameter::Listener, juce::Timer
 {
 public:
@@ -198,15 +217,7 @@ private:
     juce::Rectangle<int> getRenderArea();
     juce::Rectangle<int> getAnalysisArea();
 
-    SingleChannelSampleFifo<SimpleEQAudioProcessor::BlockType>* leftChannelFifo;
-
-    juce::AudioBuffer<float> monoBuffer;
-
-    FFTDataGenerator<std::vector<float>> leftChannelFFTDataGenerator;
-
-    AnalyzerPathGenerator<juce::Path> pathProducer;
-
-    juce::Path leftChannelFFTPath;
+    PathProducer leftPathProducer, rightPathProducer;
 };
 
 //==============================================================================

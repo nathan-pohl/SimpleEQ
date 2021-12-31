@@ -144,19 +144,15 @@ juce::String RotarySliderWithLabels::getDisplayString() const {
 
 //==============================================================================
 ResponseCurveComponent::ResponseCurveComponent(SimpleEQAudioProcessor& p) : 
-audioProcessor(p), 
-leftChannelFifo(&audioProcessor.leftChannelFifo) {
+audioProcessor(p),
+leftPathProducer(audioProcessor.leftChannelFifo),
+rightPathProducer(audioProcessor.rightChannelFifo) {
     const juce::Array <juce::AudioProcessorParameter*> &params = audioProcessor.getParameters();
     for (juce::AudioProcessorParameter* param : params) {
         param->addListener(this);
     }
 
-    // use order of 2048 for average resolution in lower end of spectrum
-    // e.g. 48000 sample rate / 2048 order = 23Hz resolution
-    // meaning not a lot of resolution at bass frequencies, but high resolution at high frequencies
-    // using higher order rates gives better resolution at lower frequencies, at the expense of more CPU
-    leftChannelFFTDataGenerator.changeOrder(FFTOrder::order2048);
-    monoBuffer.setSize(1, leftChannelFFTDataGenerator.getFFtSize());
+
 
     // update the monochain
     updateChain();
@@ -175,40 +171,47 @@ void ResponseCurveComponent::parameterValueChanged(int parameterIndex, float new
     parametersChanged.set(true);
 }
 
-// Inside this callback is where we need to coordinate the SingleChannelSampleFifo, FastFourierTransform Data generator, Path Producer, and GUI for Spectrum Analysis
-void ResponseCurveComponent::timerCallback() {
+// This is where we need to coordinate the SingleChannelSampleFifo, FastFourierTransform Data generator, Path Producer, and GUI for Spectrum Analysis
+void PathProducer::process(juce::Rectangle<float> fftBounds, double sampleRate) {
     juce::AudioBuffer<float> tempIncomingBuffer;
 
     // When consuming the buffer, we take a number of sampled points of the sample size, run the FFT algorithm on that block, 
     // then shift the buffer forward by that sample size to take on the next block of sample points
-    while (leftChannelFifo->getNumcompleteBuffersAvailable() > 0) {
-        if (leftChannelFifo->getAudioBuffer(tempIncomingBuffer)) {
+    while (channelFifo->getNumcompleteBuffersAvailable() > 0) {
+        if (channelFifo->getAudioBuffer(tempIncomingBuffer)) {
             // first shift everything in the monoBuffer forward by however many samples are in the temp buffer
             int size = tempIncomingBuffer.getNumSamples();
             juce::FloatVectorOperations::copy(monoBuffer.getWritePointer(0, 0), monoBuffer.getReadPointer(0, size), monoBuffer.getNumSamples() - size);
             juce::FloatVectorOperations::copy(monoBuffer.getWritePointer(0, monoBuffer.getNumSamples() - size), tempIncomingBuffer.getReadPointer(0, 0), size);
 
-            leftChannelFFTDataGenerator.produceFFtDataForRendering(monoBuffer, -48.f); // Our scale only goes to -48dB, so we'll use that as our "negative infinity" for now
+            fftDataGenerator.produceFFtDataForRendering(monoBuffer, -48.f); // Our scale only goes to -48dB, so we'll use that as our "negative infinity" for now
         }
     }
 
     // If there are FFT data buffers to pull, if we can pull a buffer, generate a path
-    const juce::Rectangle<float> fftBounds = getAnalysisArea().toFloat();
-    const auto fftSize = leftChannelFFTDataGenerator.getFFtSize();
+    const auto fftSize = fftDataGenerator.getFFtSize();
     // 48000 sample rate / 2048 order = 23Hz resolution <- this is the bin width
-    const double binWidth = audioProcessor.getSampleRate() / (double)fftSize;
+    const double binWidth = sampleRate / (double)fftSize;
 
-    while (leftChannelFFTDataGenerator.getNumAvailableFFTDataBlocks() > 0) {
+    while (fftDataGenerator.getNumAvailableFFTDataBlocks() > 0) {
         std::vector<float> fftData;
-        if (leftChannelFFTDataGenerator.getFFTData(fftData)) {
+        if (fftDataGenerator.getFFTData(fftData)) {
             pathProducer.generatePath(fftData, fftBounds, fftSize, binWidth, -48.f); // Our sepctrum graph only goes to -48dB, so ue that as the "negative infinity" for now
         }
     }
 
     // Pull the most recent path that has been produced, since that will be the most recent data to use - this is in case we can't pull the paths as fast as we make them
     while (pathProducer.getNumPathsAvailable()) {
-        pathProducer.getPath(leftChannelFFTPath);
+        pathProducer.getPath(fftPath);
     }
+}
+
+void ResponseCurveComponent::timerCallback() {
+    juce::Rectangle<float> fftBounds = getAnalysisArea().toFloat();
+    double sampleRate = audioProcessor.getSampleRate();
+
+    leftPathProducer.process(fftBounds, sampleRate);
+    rightPathProducer.process(fftBounds, sampleRate);
 
     if (parametersChanged.compareAndSetBool(false, true)) {
         DBG("params changed");
@@ -302,9 +305,17 @@ void ResponseCurveComponent::paint(juce::Graphics& g) {
         responseCurve.lineTo(responseArea.getX() + i, map(magnitudes[i]));
     }
 
+    Path leftChannelFFTPath = leftPathProducer.getPath();
+    Path rightChannelFFTPath = rightPathProducer.getPath();
     leftChannelFFTPath.applyTransform(AffineTransform().translation(responseArea.getX(), responseArea.getY()));
+    rightChannelFFTPath.applyTransform(AffineTransform().translation(responseArea.getX(), responseArea.getY()));
+
+    // draw the left path using sky blue
     g.setColour(Colours::skyblue);
     g.strokePath(leftChannelFFTPath, PathStrokeType(1.f));
+    // draw the right path using light yellow
+    g.setColour(Colours::lightyellow);
+    g.strokePath(rightChannelFFTPath, PathStrokeType(1.f));
 
     g.setColour(Colours::orange);
     g.drawRoundedRectangle(getRenderArea().toFloat(), 4.f, 1.f);
