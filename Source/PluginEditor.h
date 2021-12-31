@@ -113,7 +113,7 @@ struct AnalyzerPathGenerator {
 
             if (!std::isnan(y) && !std::isinf(y)) {
                 float binFreq = binNum * binWidth;
-                float normalizedBinX = juce::mapFromLog10(binFreq, 1.f, 20000.f);
+                float normalizedBinX = juce::mapFromLog10(binFreq, 20.f, 20000.f);
                 int binX = std::floor(normalizedBinX * width);
                 p.lineTo(binX, y);
             }
