@@ -13,17 +13,17 @@ void LookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, i
     using namespace juce;
 
     // background of the Slider
-    auto bounds = Rectangle<float>(x, y, width, height);
+    Rectangle<float> bounds = Rectangle<float>(x, y, width, height);
     g.setColour(Colour(97u, 18u, 167u)); // Purple background of ellipse
     g.fillEllipse(bounds);
     g.setColour(Colour(255u, 154u, 1u)); // Orange border of ellipse
     g.drawEllipse(bounds, 1.f);
 
-    if (auto* rswl = dynamic_cast<RotarySliderWithLabels*> (&slider)) {
+    if (RotarySliderWithLabels* rswl = dynamic_cast<RotarySliderWithLabels*> (&slider)) {
         jassert(rotaryStartAngle < rotaryEndAngle); // Check to make sure the angles are set right
 
         // Draw the rectangle that forms the pointer of the rotary dial // TODO it is not drawing properly
-        auto center = bounds.getCentre();
+        Point<float> center = bounds.getCentre();
         Path p;
         Rectangle<float> r;
         r.setLeft(center.getX() - 2); // Two pixels left of center
@@ -32,13 +32,13 @@ void LookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, i
         r.setBottom(center.getY() - rswl->getTextHeight() * 1.5);
         p.addRoundedRectangle(r, 2.f);
 
-        auto sliderAngleRadians = jmap(sliderPosProportional, 0.f, 1.f, rotaryStartAngle, rotaryEndAngle); // Map the slider angle to be between the bounding angles
+        float sliderAngleRadians = jmap(sliderPosProportional, 0.f, 1.f, rotaryStartAngle, rotaryEndAngle); // Map the slider angle to be between the bounding angles
         p.applyTransform(AffineTransform().rotated(sliderAngleRadians, center.getX(), center.getY()));
         g.fillPath(p);
 
         g.setFont(rswl->getTextHeight());
-        auto text = rswl->getDisplayString();
-        auto strWidth = g.getCurrentFont().getStringWidth(text);
+        juce::String text = rswl->getDisplayString();
+        int strWidth = g.getCurrentFont().getStringWidth(text);
 
         // Draw bounding box for text
         r.setSize(strWidth + 4, rswl->getTextHeight() + 2);
@@ -55,11 +55,11 @@ void LookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, i
 void RotarySliderWithLabels::paint(juce::Graphics& g) {
     using namespace juce;
     // 7 o'clock is where slider draws value of zero, 5 o'clock is where slider draws value of one
-    auto startAngle = degreesToRadians(180.f + 45.f); // 7 o'clock basically
-    auto endAngle = degreesToRadians(180.f - 45.f) + MathConstants<float>::twoPi; // 5 o'clock basically - needs a full rotation to put it at the right angle though, otherwise slider will go the wrong way
+    float startAngle = degreesToRadians(180.f + 45.f); // 7 o'clock basically
+    float endAngle = degreesToRadians(180.f - 45.f) + MathConstants<float>::twoPi; // 5 o'clock basically - needs a full rotation to put it at the right angle though, otherwise slider will go the wrong way
 
-    auto range = getRange();
-    auto sliderBounds = getSliderBounds();
+    Range<double> range = getRange();
+    Rectangle<int> sliderBounds = getSliderBounds();
     // Draw bounds of the slider
     //g.setColour(Colours::red);
     //g.drawRect(getLocalBounds());
@@ -75,22 +75,22 @@ void RotarySliderWithLabels::paint(juce::Graphics& g) {
                                       endAngle, 
                                       *this);
 
-    auto center = sliderBounds.toFloat().getCentre();
-    auto radius = sliderBounds.getWidth() * 0.5f;
+    Point<float> center = sliderBounds.toFloat().getCentre();
+    float radius = sliderBounds.getWidth() * 0.5f;
     g.setColour(Colour(0u, 172u, 1u));
     g.setFont(getTextHeight());
     
-    auto numChoices = labels.size();
+    int numChoices = labels.size();
     for (int i = 0; i < numChoices; ++i) {
-        auto pos = labels[i].pos;
+        float pos = labels[i].pos;
         jassert(0.f <= pos);
         jassert(pos <= 1.f);
 
         // This logic determines where to place the labels for the bounding points for each slider (e.g. 20 Hz to 20KHz)
-        auto angle = jmap(pos, 0.f, 1.f, startAngle, endAngle);
-        auto c = center.getPointOnCircumference(radius + getTextHeight() * 0.5f + 1, angle);
+        float angle = jmap(pos, 0.f, 1.f, startAngle, endAngle);
+        Point<float> c = center.getPointOnCircumference(radius + getTextHeight() * 0.5f + 1, angle);
         Rectangle<float> r;
-        auto str = labels[i].label;
+        String str = labels[i].label;
         r.setSize(g.getCurrentFont().getStringWidth(str), getTextHeight());
         r.setCentre(c);
         r.setY(r.getY() + getTextHeight());
@@ -99,8 +99,8 @@ void RotarySliderWithLabels::paint(juce::Graphics& g) {
 }
 
 juce::Rectangle<int> RotarySliderWithLabels::getSliderBounds() const {
-    auto bounds = getLocalBounds();
-    auto size = juce::jmin(bounds.getWidth(), bounds.getHeight()); // Make our sliders square by getting the minimum size from the width and height
+    juce::Rectangle<int> bounds = getLocalBounds();
+    int size = juce::jmin(bounds.getWidth(), bounds.getHeight()); // Make our sliders square by getting the minimum size from the width and height
     size -= getTextHeight() * 2;
     juce::Rectangle<int> r;
     r.setSize(size, size);
@@ -112,7 +112,7 @@ juce::Rectangle<int> RotarySliderWithLabels::getSliderBounds() const {
 //int RotarySliderWithLabels::getTextHeight() const { return 14; }
 juce::String RotarySliderWithLabels::getDisplayString() const {
     // If the parameter is a choice parameter, show the choice name e.g. 12 db/Oct
-    if (auto* choiceParam = dynamic_cast<juce::AudioParameterChoice*>(param)) {
+    if (juce::AudioParameterChoice* choiceParam = dynamic_cast<juce::AudioParameterChoice*>(param)) {
         return choiceParam->getCurrentChoiceName();
     }
 
@@ -120,7 +120,7 @@ juce::String RotarySliderWithLabels::getDisplayString() const {
     bool addK = false; // For Kilohertz
 
     // Only Float parameters are supported here
-    if (auto* floatParam = dynamic_cast<juce::AudioParameterFloat*>(param)) {
+    if (juce::AudioParameterFloat* floatParam = dynamic_cast<juce::AudioParameterFloat*>(param)) {
         float val = getValue();
         if (val > 999.f) {
             val /= 1000.f;
@@ -144,8 +144,8 @@ juce::String RotarySliderWithLabels::getDisplayString() const {
 
 //==============================================================================
 ResponseCurveComponent::ResponseCurveComponent(SimpleEQAudioProcessor& p) : audioProcessor(p) {
-    const auto& params = audioProcessor.getParameters();
-    for (auto param : params) {
+    const juce::Array <juce::AudioProcessorParameter*> &params = audioProcessor.getParameters();
+    for (juce::AudioProcessorParameter* param : params) {
         param->addListener(this);
     }
     // update the monochain
@@ -155,8 +155,8 @@ ResponseCurveComponent::ResponseCurveComponent(SimpleEQAudioProcessor& p) : audi
 }
 
 ResponseCurveComponent::~ResponseCurveComponent() {
-    const auto& params = audioProcessor.getParameters();
-    for (auto param : params) {
+    const juce::Array <juce::AudioProcessorParameter*>& params = audioProcessor.getParameters();
+    for (juce::AudioProcessorParameter* param : params) {
         param->removeListener(this);
     }
 }
@@ -176,8 +176,8 @@ void ResponseCurveComponent::timerCallback() {
 }
 
 void ResponseCurveComponent::updateChain() {
-    auto chainSettings = getChainSettings(audioProcessor.apvts);
-    auto peakCoefficients = makePeakFilter(chainSettings, audioProcessor.getSampleRate());
+    ChainSettings chainSettings = getChainSettings(audioProcessor.apvts);
+    Coefficients peakCoefficients = makePeakFilter(chainSettings, audioProcessor.getSampleRate());
     updateCoefficients(monoChain.get<ChainPositions::Peak>().coefficients, peakCoefficients);
 
     auto lowCutCoefficients = makeLowCutFilter(chainSettings, audioProcessor.getSampleRate());
@@ -194,20 +194,20 @@ void ResponseCurveComponent::paint(juce::Graphics& g) {
 
     g.drawImage(background, getLocalBounds().toFloat());
 
-    auto responseArea = getAnalysisArea();
+    Rectangle<int> responseArea = getAnalysisArea();
 
-    auto width = responseArea.getWidth();
-    auto& lowcut = monoChain.get<ChainPositions::LowCut>();
-    auto& peak = monoChain.get<ChainPositions::Peak>();
-    auto& highcut = monoChain.get<ChainPositions::HighCut>();
+    int width = responseArea.getWidth();
+    CutFilter& lowcut = monoChain.get<ChainPositions::LowCut>();
+    Filter& peak = monoChain.get<ChainPositions::Peak>();
+    CutFilter& highcut = monoChain.get<ChainPositions::HighCut>();
 
-    auto sampleRate = audioProcessor.getSampleRate();
+    double sampleRate = audioProcessor.getSampleRate();
     std::vector<double> magnitudes;
     magnitudes.resize(width);
 
     for (int i = 0; i < width; ++i) {
         double magnitude = 1.f;
-        auto freq = mapToLog10(double(i) / double(width), 20.0, 20000.0);
+        double freq = mapToLog10(double(i) / double(width), 20.0, 20000.0);
 
         if (!monoChain.isBypassed<ChainPositions::Peak>()) {
             magnitude *= peak.coefficients->getMagnitudeForFrequency(freq, sampleRate);
@@ -246,7 +246,7 @@ void ResponseCurveComponent::paint(juce::Graphics& g) {
     Path responseCurve;
     const double outputMin = responseArea.getBottom();
     const double outputMax = responseArea.getY();
-    auto map = [outputMin, outputMax](double input) {
+    double map = [outputMin, outputMax](double input) {
         return jmap(input, -24.0, 24.0, outputMin, outputMax);
     };
 
@@ -362,7 +362,7 @@ void ResponseCurveComponent::resized() {
 }
 
 juce::Rectangle<int> ResponseCurveComponent::getRenderArea() {
-    auto bounds = getLocalBounds();
+    juce::Rectangle<int> bounds = getLocalBounds();
 
     /*bounds.reduce(JUCE_LIVE_CONSTANT(10),
         JUCE_LIVE_CONSTANT(8));*/
@@ -376,7 +376,7 @@ juce::Rectangle<int> ResponseCurveComponent::getRenderArea() {
 }
 
 juce::Rectangle<int> ResponseCurveComponent::getAnalysisArea() {
-    auto bounds = getRenderArea();
+    juce::Rectangle<int> bounds = getRenderArea();
     bounds.removeFromTop(4);
     bounds.removeFromBottom(4);
     return bounds;
@@ -419,7 +419,7 @@ SimpleEQAudioProcessorEditor::SimpleEQAudioProcessorEditor (SimpleEQAudioProcess
     highCutSlopeSlider.labels.add({ 0.f, "12dB/Oct" });
     highCutSlopeSlider.labels.add({ 1.f, "48dB/Oct" });
 
-    for (auto* comp : getComponents()) {
+    for (juce::Component* comp : getComponents()) {
         addAndMakeVisible(comp);
     }
 
@@ -440,15 +440,15 @@ void SimpleEQAudioProcessorEditor::paint (juce::Graphics& g)
 
 void SimpleEQAudioProcessorEditor::resized()
 {
-    auto bounds = getLocalBounds();
+    juce::Rectangle<int> bounds = getLocalBounds();
     float heightRatio = 25.0f / 100.f; // JUCE_LIVE_CONSTANT(33) / 100.f; //(use this to dial in the size while running plugin)
-    auto responseArea = bounds.removeFromTop(bounds.getHeight() * heightRatio);
+    juce::Rectangle<int> responseArea = bounds.removeFromTop(bounds.getHeight() * heightRatio);
 
     responseCurveComponent.setBounds(responseArea);
 
     bounds.removeFromTop(5); // Create a little space between the response curve and dials
-    auto lowCutArea = bounds.removeFromLeft(bounds.getWidth() * 0.33);
-    auto highCutArea = bounds.removeFromRight(bounds.getWidth() * 0.5);
+    juce::Rectangle<int> lowCutArea = bounds.removeFromLeft(bounds.getWidth() * 0.33);
+    juce::Rectangle<int> highCutArea = bounds.removeFromRight(bounds.getWidth() * 0.5);
 
     lowCutFreqSlider.setBounds(lowCutArea.removeFromTop(lowCutArea.getHeight() * 0.5));
     lowCutSlopeSlider.setBounds(lowCutArea);

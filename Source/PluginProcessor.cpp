@@ -140,8 +140,8 @@ bool SimpleEQAudioProcessor::isBusesLayoutSupported (const BusesLayout& layouts)
 void SimpleEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels  = getTotalNumInputChannels();
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
+    int totalNumInputChannels  = getTotalNumInputChannels();
+    int totalNumOutputChannels = getTotalNumOutputChannels();
 
     // In case we have more outputs than inputs, this code clears any output
     // channels that didn't contain input data, (because these aren't
@@ -149,14 +149,14 @@ void SimpleEQAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juc
     // This is here to avoid people getting screaming feedback
     // when they first compile a plugin, but obviously you don't need to keep
     // this code if your algorithm always overwrites all the output channels.
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
+    for (int i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
 
     updateFilters();
 
     juce::dsp::AudioBlock<float> block(buffer);
-    auto leftBlock = block.getSingleChannelBlock(0);
-    auto rightBlock = block.getSingleChannelBlock(1);
+    juce::dsp::AudioBlock<float> leftBlock = block.getSingleChannelBlock(0);
+    juce::dsp::AudioBlock<float> rightBlock = block.getSingleChannelBlock(1);
 
     juce::dsp::ProcessContextReplacing<float> leftContext(leftBlock);
     juce::dsp::ProcessContextReplacing<float> rightContext(rightBlock);
@@ -195,7 +195,7 @@ void SimpleEQAudioProcessor::setStateInformation (const void* data, int sizeInBy
     // whose contents will have been created by the getStateInformation() call.
 
     // retrieve state of plugin from memory
-    auto tree = juce::ValueTree::readFromData(data, sizeInBytes);
+    juce::ValueTree tree = juce::ValueTree::readFromData(data, sizeInBytes);
     if (tree.isValid()) {
         apvts.replaceState(tree);
         updateFilters();
@@ -226,7 +226,7 @@ Coefficients makePeakFilter(const ChainSettings& chainSettings, double sampleRat
 
 
 void SimpleEQAudioProcessor::updatePeakFilter(const ChainSettings& chainSettings) {
-    auto peakCoefficients = makePeakFilter(chainSettings, getSampleRate());
+    Coefficients peakCoefficients = makePeakFilter(chainSettings, getSampleRate());
     // link to the middle link in the chain (ChainPositions::Peak), the peak filter
     updateCoefficients(leftChain.get<ChainPositions::Peak>().coefficients, peakCoefficients);
     updateCoefficients(rightChain.get<ChainPositions::Peak>().coefficients, peakCoefficients);
@@ -239,8 +239,8 @@ void updateCoefficients(Coefficients& old, const Coefficients& replacements) {
 
 void SimpleEQAudioProcessor::updateLowCutFilter(const ChainSettings& chainSettings) {
     auto lowCutCoefficients = makeLowCutFilter(chainSettings, getSampleRate());
-    auto& leftLowCut = leftChain.get<ChainPositions::LowCut>();
-    auto& rightLowCut = rightChain.get<ChainPositions::LowCut>();
+    CutFilter& leftLowCut = leftChain.get<ChainPositions::LowCut>();
+    CutFilter& rightLowCut = rightChain.get<ChainPositions::LowCut>();
 
     updateCutFilter(leftLowCut, lowCutCoefficients, chainSettings.lowCutSlope);
     updateCutFilter(rightLowCut, lowCutCoefficients, chainSettings.lowCutSlope);
@@ -248,15 +248,15 @@ void SimpleEQAudioProcessor::updateLowCutFilter(const ChainSettings& chainSettin
 
 void SimpleEQAudioProcessor::updateHighCutFilter(const ChainSettings& chainSettings) {
     auto highCutCoefficients = makeHighCutFilter(chainSettings, getSampleRate());
-    auto& leftHighCut = leftChain.get<ChainPositions::HighCut>();
-    auto& rightHighCut = rightChain.get<ChainPositions::HighCut>();
+    CutFilter& leftHighCut = leftChain.get<ChainPositions::HighCut>();
+    CutFilter& rightHighCut = rightChain.get<ChainPositions::HighCut>();
 
     updateCutFilter(leftHighCut, highCutCoefficients, chainSettings.highCutSlope);
     updateCutFilter(rightHighCut, highCutCoefficients, chainSettings.highCutSlope);
 }
 
 void SimpleEQAudioProcessor::updateFilters() {
-    auto chainSettings = getChainSettings(apvts);
+    ChainSettings chainSettings = getChainSettings(apvts);
     updateLowCutFilter(chainSettings);
     updatePeakFilter(chainSettings);
     updateHighCutFilter(chainSettings);
