@@ -239,11 +239,13 @@ private:
     SimpleEQAudioProcessor& audioProcessor;
 
     RotarySliderWithLabels peakFreqSlider, peakGainSlider, peakQualitySlider, lowCutFreqSlider, highCutFreqSlider, lowCutSlopeSlider, highCutSlopeSlider;
+    juce::ToggleButton lowCutBypassButton, peakBypassButton, highCutBypassButton, analyzerEnabledButton;
 
     ResponseCurveComponent responseCurveComponent;
 
     using APVTS = juce::AudioProcessorValueTreeState;
     using Attachment = APVTS::SliderAttachment;
+    using ButtonAttachment = APVTS::ButtonAttachment;
 
     Attachment peakFreqSliderAttachment, 
                peakGainSliderAttachment, 
@@ -252,6 +254,11 @@ private:
                highCutFreqSliderAttachment, 
                lowCutSlopeSliderAttachment, 
                highCutSlopeSliderAttachment;
+
+    ButtonAttachment lowCutBypassButtonAttachment, 
+                     peakBypassButtonAttachment, 
+                     highCutBypassButtonAttachment, 
+                     analyzerEnabledButtonAttachment;
 
     std::vector<juce::Component*> getComponents();
 
