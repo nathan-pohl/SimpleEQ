@@ -207,6 +207,10 @@ public:
 
     void paint(juce::Graphics& g) override;
     void resized() override;
+
+    void toggleAnalysisEnablement(bool enabled) {
+        shouldShowFFTAnlaysis = enabled;
+    }
 private:
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
@@ -223,6 +227,8 @@ private:
     juce::Rectangle<int> getAnalysisArea();
 
     PathProducer leftPathProducer, rightPathProducer;
+
+    bool shouldShowFFTAnlaysis = true;
 };
 
 //==============================================================================
