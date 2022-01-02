@@ -11,12 +11,13 @@
 
 void LookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, int height, float sliderPosProportional, float rotaryStartAngle, float rotaryEndAngle, juce::Slider& slider) {
     using namespace juce;
+    bool enabled = slider.isEnabled();
 
     // background of the Slider
     Rectangle<float> bounds = Rectangle<float>(x, y, width, height);
-    g.setColour(Colour(97u, 18u, 167u)); // Purple background of ellipse
+    g.setColour(enabled ? Colour(97u, 18u, 167u) : Colours::darkgrey); // Purple background of ellipse, dark grey if slider is diabled
     g.fillEllipse(bounds);
-    g.setColour(Colour(255u, 154u, 1u)); // Orange border of ellipse
+    g.setColour(enabled ? Colour(255u, 154u, 1u) : Colours::grey); // Orange border of ellipse, grey if slider is disabled
     g.drawEllipse(bounds, 1.f);
 
     if (RotarySliderWithLabels* rswl = dynamic_cast<RotarySliderWithLabels*> (&slider)) {
@@ -536,6 +537,32 @@ SimpleEQAudioProcessorEditor::SimpleEQAudioProcessorEditor (SimpleEQAudioProcess
     peakBypassButton.setLookAndFeel(&lnf);
     highCutBypassButton.setLookAndFeel(&lnf);
     analyzerEnabledButton.setLookAndFeel(&lnf);
+
+    // Disable sliders when bypass buttons are disabled
+    // Use a SafePointer when using the onclick lambdas to make sure this class still exists when these functions are called
+    juce::Component::SafePointer<SimpleEQAudioProcessorEditor> safePtr = juce::Component::SafePointer<SimpleEQAudioProcessorEditor>(this);
+    lowCutBypassButton.onClick = [safePtr]() {
+        if (auto* comp = safePtr.getComponent()) {
+            bool bypassed = comp->lowCutBypassButton.getToggleState();
+            comp->lowCutFreqSlider.setEnabled(!bypassed);
+            comp->lowCutSlopeSlider.setEnabled(!bypassed);
+        }
+    };
+    peakBypassButton.onClick = [safePtr]() {
+        if (auto* comp = safePtr.getComponent()) {
+            bool bypassed = comp->peakBypassButton.getToggleState();
+            comp->peakFreqSlider.setEnabled(!bypassed);
+            comp->peakGainSlider.setEnabled(!bypassed);
+            comp->peakQualitySlider.setEnabled(!bypassed);
+        }
+    };
+    highCutBypassButton.onClick = [safePtr]() {
+        if (auto* comp = safePtr.getComponent()) {
+            bool bypassed = comp->highCutBypassButton.getToggleState();
+            comp->highCutFreqSlider.setEnabled(!bypassed);
+            comp->highCutSlopeSlider.setEnabled(!bypassed);
+        }
+    };
 
     setSize (600, 480);
 }
