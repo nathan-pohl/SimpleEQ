@@ -226,6 +226,11 @@ private:
 };
 
 //==============================================================================
+// We have two different kinds of buttons we want to use, but want to use the same LookAndFeel functions between them.
+// Using these inherited classes to make it easier to determine between the two
+struct PowerButton : juce::ToggleButton { };
+struct AnalyzerButton : juce::ToggleButton{ };
+//==============================================================================
 /**
 */
 class SimpleEQAudioProcessorEditor  : public juce::AudioProcessorEditor
@@ -244,7 +249,8 @@ private:
     SimpleEQAudioProcessor& audioProcessor;
 
     RotarySliderWithLabels peakFreqSlider, peakGainSlider, peakQualitySlider, lowCutFreqSlider, highCutFreqSlider, lowCutSlopeSlider, highCutSlopeSlider;
-    juce::ToggleButton lowCutBypassButton, peakBypassButton, highCutBypassButton, analyzerEnabledButton;
+    PowerButton lowCutBypassButton, peakBypassButton, highCutBypassButton;
+    AnalyzerButton analyzerEnabledButton;
 
     ResponseCurveComponent responseCurveComponent;
 
