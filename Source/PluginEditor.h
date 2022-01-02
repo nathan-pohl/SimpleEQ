@@ -229,7 +229,24 @@ private:
 // We have two different kinds of buttons we want to use, but want to use the same LookAndFeel functions between them.
 // Using these inherited classes to make it easier to determine between the two
 struct PowerButton : juce::ToggleButton { };
-struct AnalyzerButton : juce::ToggleButton{ };
+struct AnalyzerButton : juce::ToggleButton{ 
+    void resized() override {
+        juce::Rectangle<int> bounds = getLocalBounds();
+        juce::Rectangle<int> insetRect = bounds.reduced(4);
+
+        randomPath.clear();
+        juce::Random rand;
+
+        int pathBaseHeight = insetRect.getY() + insetRect.getHeight();
+        // Draw a random jagged line to indicate that this is the button for the spectrum analyzer
+        randomPath.startNewSubPath(insetRect.getX(), pathBaseHeight * rand.nextFloat());
+        for (int x = insetRect.getX() + 1; x < insetRect.getRight(); x += 2) {
+            randomPath.lineTo(x, pathBaseHeight * rand.nextFloat());
+        }
+    }
+
+    juce::Path randomPath;
+};
 //==============================================================================
 /**
 */
