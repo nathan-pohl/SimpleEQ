@@ -51,6 +51,33 @@ void LookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, i
     }
 }
 
+void LookAndFeel::drawToggleButton(juce::Graphics& g, juce::ToggleButton& toggleButton, bool shouldDrawButtonAsHighlighted, bool shouldDrawButtonAsDown) {
+    using namespace juce;
+
+    Path powerButton;
+    Rectangle<int> bounds = toggleButton.getLocalBounds();
+    int size = jmin(bounds.getWidth(), bounds.getHeight()) - 6;
+    Rectangle<float> r = bounds.withSizeKeepingCentre(size, size).toFloat();
+
+    float angle = 30.f;
+    size -= 6;
+
+    // These lines draw on the button to create the typical power button symbol. The arc creates that incomplete circle within the button, and the subPath and lineTo draw the line from top to center 
+    powerButton.addCentredArc(r.getCentreX(), r.getCentreY(), size * 0.5, size * 0.5,  0.f, degreesToRadians(angle), degreesToRadians(360.f - angle), true);
+    powerButton.startNewSubPath(r.getCentreX(), r.getY());
+    powerButton.lineTo(r.getCentre());
+
+    PathStrokeType pst(2.f, PathStrokeType::JointStyle::curved);
+
+    // if button is on, then band is bypassed and we should use grey, otherwise, use green to indicate the band is engaged
+    auto color = toggleButton.getToggleState() ? Colours::dimgrey : Colour(0u, 172u, 1u);
+    g.setColour(color);
+    g.strokePath(powerButton, pst);
+    // One thing that could be added to the button is making sure the toggle only happens when clicked inside where the button is actually drawn, 
+    // rather than it's bounding box which is much bigger than the ellipse drawn here
+    g.drawEllipse(r, 2);
+}
+
 //==============================================================================
 void RotarySliderWithLabels::paint(juce::Graphics& g) {
     using namespace juce;
@@ -494,11 +521,18 @@ SimpleEQAudioProcessorEditor::SimpleEQAudioProcessorEditor (SimpleEQAudioProcess
         addAndMakeVisible(comp);
     }
 
+    lowCutBypassButton.setLookAndFeel(&lnf);
+    peakBypassButton.setLookAndFeel(&lnf);
+    highCutBypassButton.setLookAndFeel(&lnf);
+
     setSize (600, 480);
 }
 
 SimpleEQAudioProcessorEditor::~SimpleEQAudioProcessorEditor()
 {
+    lowCutBypassButton.setLookAndFeel(nullptr);
+    peakBypassButton.setLookAndFeel(nullptr);
+    highCutBypassButton.setLookAndFeel(nullptr);
 }
 
 //==============================================================================
