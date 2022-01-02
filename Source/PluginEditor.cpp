@@ -44,10 +44,10 @@ void LookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, i
         // Draw bounding box for text
         r.setSize(strWidth + 4, rswl->getTextHeight() + 2);
         r.setCentre(center);
-        g.setColour(Colours::black);
+        g.setColour(enabled ? Colours::black : Colours::darkgrey); // Text background, use darkgrey if slider is disabled
         g.fillRect(r);
 
-        g.setColour(Colours::white);
+        g.setColour(enabled ? Colours::white : Colours::lightgrey); // Text color, use light grey if slider is disabled
         g.drawFittedText(text, r.toNearestInt(), juce::Justification::centred, 1);
     }
 }
