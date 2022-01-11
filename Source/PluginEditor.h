@@ -178,11 +178,10 @@ private:
 
 struct PathProducer {
     PathProducer(SingleChannelSampleFifo<SimpleEQAudioProcessor::BlockType>& scsf) : channelFifo(&scsf) {
-        // use order of 2048 for average resolution in lower end of spectrum
-        // e.g. 48000 sample rate / 2048 order = 23Hz resolution
-        // meaning not a lot of resolution at bass frequencies, but high resolution at high frequencies
+        // use order of 8192 for best resolution of lower end of spectrum
+        // e.g. 48000 sample rate / 8192 order = 6Hz resolution
         // using higher order rates gives better resolution at lower frequencies, at the expense of more CPU
-        fftDataGenerator.changeOrder(FFTOrder::order2048);
+        fftDataGenerator.changeOrder(FFTOrder::order8192);
         monoBuffer.setSize(1, fftDataGenerator.getFFtSize());
     }
     void process(juce::Rectangle<float> fftBounds, double sampleRate);

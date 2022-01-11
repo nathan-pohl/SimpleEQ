@@ -18,7 +18,7 @@ void LookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, i
     g.setColour(enabled ? Colour(97u, 18u, 167u) : Colours::darkgrey); // Purple background of ellipse, dark grey if slider is diabled
     g.fillEllipse(bounds);
     g.setColour(enabled ? Colour(255u, 154u, 1u) : Colours::grey); // Orange border of ellipse, grey if slider is disabled
-    g.drawEllipse(bounds, 1.f);
+    g.drawEllipse(bounds, ELLIPSE_DEFAULT_THICKNESS);
 
     if (RotarySliderWithLabels* rswl = dynamic_cast<RotarySliderWithLabels*> (&slider)) {
         jassert(rotaryStartAngle < rotaryEndAngle); // Check to make sure the angles are set right
@@ -27,13 +27,13 @@ void LookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, i
         Point<float> center = bounds.getCentre();
         Path p;
         Rectangle<float> r;
-        r.setLeft(center.getX() - 2); // Two pixels left of center
-        r.setRight(center.getX() + 2); // Two pixels to right of center
+        r.setLeft(center.getX() - SLIDER_X_PADDING); // Two pixels left of center
+        r.setRight(center.getX() + SLIDER_X_PADDING); // Two pixels to right of center
         r.setTop(bounds.getY());
         r.setBottom(center.getY() - rswl->getTextHeight() * 1.5);
-        p.addRoundedRectangle(r, 2.f);
+        p.addRoundedRectangle(r, ROUNDED_RECTANGLE_THICKNESS);
 
-        float sliderAngleRadians = jmap(sliderPosProportional, 0.f, 1.f, rotaryStartAngle, rotaryEndAngle); // Map the slider angle to be between the bounding angles
+        float sliderAngleRadians = jmap(sliderPosProportional, SLIDER_MIN_RANGE, SLIDER_MAX_RANGE, rotaryStartAngle, rotaryEndAngle); // Map the slider angle to be between the bounding angles
         p.applyTransform(AffineTransform().rotated(sliderAngleRadians, center.getX(), center.getY()));
         g.fillPath(p);
 
@@ -42,13 +42,13 @@ void LookAndFeel::drawRotarySlider(juce::Graphics& g, int x, int y, int width, i
         int strWidth = g.getCurrentFont().getStringWidth(text);
 
         // Draw bounding box for text
-        r.setSize(strWidth + 4, rswl->getTextHeight() + 2);
+        r.setSize(strWidth + TEXT_BOUNDING_BOX_ADD_WIDTH, rswl->getTextHeight() + TEXT_BOUNDING_BOX_ADD_HEIGHT);
         r.setCentre(center);
         g.setColour(enabled ? Colours::black : Colours::darkgrey); // Text background, use darkgrey if slider is disabled
         g.fillRect(r);
 
         g.setColour(enabled ? Colours::white : Colours::lightgrey); // Text color, use light grey if slider is disabled
-        g.drawFittedText(text, r.toNearestInt(), juce::Justification::centred, 1);
+        g.drawFittedText(text, r.toNearestInt(), juce::Justification::centred, NUMBER_OF_LINES_TEXT);
     }
 }
 
@@ -77,7 +77,7 @@ void LookAndFeel::drawToggleButton(juce::Graphics& g, juce::ToggleButton& toggle
         g.strokePath(powerButton, pst);
         // One thing that could be added to the button is making sure the toggle only happens when clicked inside where the button is actually drawn, 
         // rather than it's bounding box which is much bigger than the ellipse drawn here
-        g.drawEllipse(rect, 2);
+        g.drawEllipse(rect, ELLIPSE_THICKER_OUTLINE);
     }
     else if (AnalyzerButton* analyzerButton = dynamic_cast<AnalyzerButton*>(&toggleButton)) {
         // Analyzer button works opposite to power button so if button is off, then the analyzer is on and we should use green
@@ -86,7 +86,7 @@ void LookAndFeel::drawToggleButton(juce::Graphics& g, juce::ToggleButton& toggle
 
         Rectangle<int> bounds = toggleButton.getLocalBounds();
         g.drawRect(bounds);
-        g.strokePath(analyzerButton->randomPath, PathStrokeType(1.f));
+        g.strokePath(analyzerButton->randomPath, PathStrokeType(PATH_STROKE_THICKNESS));
     }
 }
 
@@ -109,13 +109,13 @@ void RotarySliderWithLabels::paint(juce::Graphics& g) {
                                       sliderBounds.getY(), 
                                       sliderBounds.getWidth(), 
                                       sliderBounds.getHeight(), 
-                                      jmap(getValue(), range.getStart(), range.getEnd(), 0.0, 1.0),  // normalize values in the range
+                                      jmap(getValue(), range.getStart(), range.getEnd(), SLIDER_MIN_RANGE_DOUBLE, SLIDER_MAX_RANGE_DOUBLE),  // normalize values in the range
                                       startAngle, 
                                       endAngle, 
                                       *this);
 
     Point<float> center = sliderBounds.toFloat().getCentre();
-    float radius = sliderBounds.getWidth() * 0.5f;
+    float radius = sliderBounds.getWidth() * UI_BOUNDS_HALF;
     g.setColour(Colour(0u, 172u, 1u));
     g.setFont(getTextHeight());
     
@@ -133,7 +133,7 @@ void RotarySliderWithLabels::paint(juce::Graphics& g) {
         r.setSize(g.getCurrentFont().getStringWidth(str), getTextHeight());
         r.setCentre(c);
         r.setY(r.getY() + getTextHeight());
-        g.drawFittedText(str, r.toNearestInt(), juce::Justification::centred, 1);
+        g.drawFittedText(str, r.toNearestInt(), juce::Justification::centred, NUMBER_OF_LINES_TEXT);
     }
 }
 
@@ -220,7 +220,7 @@ void PathProducer::process(juce::Rectangle<float> fftBounds, double sampleRate) 
             juce::FloatVectorOperations::copy(monoBuffer.getWritePointer(0, 0), monoBuffer.getReadPointer(0, size), monoBuffer.getNumSamples() - size);
             juce::FloatVectorOperations::copy(monoBuffer.getWritePointer(0, monoBuffer.getNumSamples() - size), tempIncomingBuffer.getReadPointer(0, 0), size);
 
-            fftDataGenerator.produceFFtDataForRendering(monoBuffer, -48.f); // Our scale only goes to -48dB, so we'll use that as our "negative infinity" for now
+            fftDataGenerator.produceFFtDataForRendering(monoBuffer, ABSOLUTE_MINIMUM_GAIN); // Our scale only goes to -48dB, so we'll use that as our "negative infinity" for now
         }
     }
 
@@ -232,7 +232,7 @@ void PathProducer::process(juce::Rectangle<float> fftBounds, double sampleRate) 
     while (fftDataGenerator.getNumAvailableFFTDataBlocks() > 0) {
         std::vector<float> fftData;
         if (fftDataGenerator.getFFTData(fftData)) {
-            pathProducer.generatePath(fftData, fftBounds, fftSize, binWidth, -48.f); // Our sepctrum graph only goes to -48dB, so ue that as the "negative infinity" for now
+            pathProducer.generatePath(fftData, fftBounds, fftSize, binWidth, ABSOLUTE_MINIMUM_GAIN); // Our sepctrum graph only goes to -48dB, so ue that as the "negative infinity" for now
         }
     }
 
@@ -395,7 +395,7 @@ void ResponseCurveComponent::resized() {
     // cache the x value position into an array
     Array<float> xs;
     for (float f : freqs) {
-        float normX = mapFromLog10(f, 20.f, 20000.f);
+        float normX = mapFromLog10(f, FILTER_MIN_HZ, FILTER_MAX_HZ);
         xs.add(left + width * normX);
     }
 
@@ -409,7 +409,7 @@ void ResponseCurveComponent::resized() {
     };
 
     for (float gDb : gain) {
-        float y = jmap(gDb, -24.f, 24.f, float(getHeight()), 0.f);
+        float y = jmap(gDb, PEAK_GAIN_MIN_DB, PEAK_GAIN_MAX_DB, float(getHeight()), 0.f);
         g.setColour(gDb == 0.f ? Colour(0u, 172u, 1u): Colours::darkgrey); // If gain is 0dB draw a green line, otherwise use dark grey
         g.drawHorizontalLine(y, left, right);
     }
@@ -440,11 +440,11 @@ void ResponseCurveComponent::resized() {
         r.setCentre(x, 0);
         r.setY(1);
 
-        g.drawFittedText(str, r, juce::Justification::centred, 1);
+        g.drawFittedText(str, r, juce::Justification::centred, NUMBER_OF_LINES_TEXT);
     }
 
     for (float gDb : gain) {
-        float y = jmap(gDb, -24.f, 24.f, float(bottom), float(top));
+        float y = jmap(gDb, PEAK_GAIN_MIN_DB, PEAK_GAIN_MAX_DB, float(bottom), float(top));
         String str;
         if (gDb > 0) {
             str << "+";
@@ -457,7 +457,7 @@ void ResponseCurveComponent::resized() {
         r.setX(getWidth() - textWidth);
         r.setCentre(r.getCentreX(), y);
         g.setColour(gDb == 0.f ? Colour(0u, 172u, 1u) : Colours::lightgrey); // If gain is 0dB draw a green line, otherwise use light grey
-        g.drawFittedText(str, r, juce::Justification::centred, 1);
+        g.drawFittedText(str, r, juce::Justification::centred, NUMBER_OF_LINES_TEXT);
 
         // draw labels on left side of response curve for the spectrum analyzer
         // the range here needs to go from 0dB to -48dB, so we can simply subtract 24dB from our existing gain array to get these numbers
@@ -467,7 +467,7 @@ void ResponseCurveComponent::resized() {
         textWidth = g.getCurrentFont().getStringWidth(str);
         r.setSize(textWidth, fontHeight);
         g.setColour(Colours::lightgrey);
-        g.drawFittedText(str, r, juce::Justification::centred, 1);
+        g.drawFittedText(str, r, juce::Justification::centred, NUMBER_OF_LINES_TEXT);
     }
 }
 
@@ -477,18 +477,18 @@ juce::Rectangle<int> ResponseCurveComponent::getRenderArea() {
     /*bounds.reduce(JUCE_LIVE_CONSTANT(10),
         JUCE_LIVE_CONSTANT(8));*/
     //bounds.reduce(10, 8);
-    bounds.removeFromTop(12);
-    bounds.removeFromBottom(2);
-    bounds.removeFromLeft(20);
-    bounds.removeFromRight(20);
+    bounds.removeFromTop(RESPONSE_CURVE_TOP_REMOVAL);
+    bounds.removeFromBottom(RESPONSE_CURVE_BOTTOM_REMOVAL);
+    bounds.removeFromLeft(RESPONSE_CURVE_SIDE_REMOVAL);
+    bounds.removeFromRight(RESPONSE_CURVE_SIDE_REMOVAL);
 
     return bounds;
 }
 
 juce::Rectangle<int> ResponseCurveComponent::getAnalysisArea() {
     juce::Rectangle<int> bounds = getRenderArea();
-    bounds.removeFromTop(4);
-    bounds.removeFromBottom(4);
+    bounds.removeFromTop(ANALYSIS_AREA_PADDING);
+    bounds.removeFromBottom(ANALYSIS_AREA_PADDING);
     return bounds;
 }
 
@@ -496,42 +496,42 @@ juce::Rectangle<int> ResponseCurveComponent::getAnalysisArea() {
 SimpleEQAudioProcessorEditor::SimpleEQAudioProcessorEditor (SimpleEQAudioProcessor& p)
     : AudioProcessorEditor (&p), audioProcessor (p),
     // Need to initialize all RotarySliderWithLabels before creating response curve and attachments
-    peakFreqSlider(*audioProcessor.apvts.getParameter("Peak Freq"), "Hz"),
-    peakGainSlider(*audioProcessor.apvts.getParameter("Peak Gain"), "dB"),
-    peakQualitySlider(*audioProcessor.apvts.getParameter("Peak Quality"), ""),
-    lowCutFreqSlider(*audioProcessor.apvts.getParameter("LowCut Freq"), "Hz"),
-    highCutFreqSlider(*audioProcessor.apvts.getParameter("HighCut Freq"), "Hz"),
-    lowCutSlopeSlider(*audioProcessor.apvts.getParameter("LowCut Slope"), "dB/Oct"),
-    highCutSlopeSlider(*audioProcessor.apvts.getParameter("HighCut Slope"), "dB/Oct"),
+    peakFreqSlider(*audioProcessor.apvts.getParameter(PEAK_FREQ_NAME), HZ),
+    peakGainSlider(*audioProcessor.apvts.getParameter(PEAK_GAIN_NAME), DB),
+    peakQualitySlider(*audioProcessor.apvts.getParameter(PEAK_QUALITY_NAME), ""),
+    lowCutFreqSlider(*audioProcessor.apvts.getParameter(LOW_CUT_FREQ_NAME), HZ),
+    highCutFreqSlider(*audioProcessor.apvts.getParameter(HIGH_CUT_FREQ_NAME), HZ),
+    lowCutSlopeSlider(*audioProcessor.apvts.getParameter(LOW_CUT_SLOPE_NAME), DB_PER_OCT),
+    highCutSlopeSlider(*audioProcessor.apvts.getParameter(HIGH_CUT_SLOPE_NAME), DB_PER_OCT),
     // Create attachments
     responseCurveComponent(audioProcessor),
-    peakFreqSliderAttachment(audioProcessor.apvts, "Peak Freq", peakFreqSlider),
-    peakGainSliderAttachment(audioProcessor.apvts, "Peak Gain", peakGainSlider),
-    peakQualitySliderAttachment(audioProcessor.apvts, "Peak Quality", peakQualitySlider),
-    lowCutFreqSliderAttachment(audioProcessor.apvts, "LowCut Freq", lowCutFreqSlider),
-    highCutFreqSliderAttachment(audioProcessor.apvts, "HighCut Freq", highCutFreqSlider),
-    lowCutSlopeSliderAttachment(audioProcessor.apvts, "LowCut Slope", lowCutSlopeSlider),
-    highCutSlopeSliderAttachment(audioProcessor.apvts, "HighCut Slope", highCutSlopeSlider),
-    lowCutBypassButtonAttachment(audioProcessor.apvts, "LowCut Bypassed", lowCutBypassButton),
-    peakBypassButtonAttachment(audioProcessor.apvts, "Peak Bypassed", peakBypassButton),
-    highCutBypassButtonAttachment(audioProcessor.apvts, "HighCut Bypassed", highCutBypassButton),
-    analyzerEnabledButtonAttachment(audioProcessor.apvts, "Analyzer Enabled", analyzerEnabledButton)
+    peakFreqSliderAttachment(audioProcessor.apvts, PEAK_FREQ_NAME, peakFreqSlider),
+    peakGainSliderAttachment(audioProcessor.apvts, PEAK_GAIN_NAME, peakGainSlider),
+    peakQualitySliderAttachment(audioProcessor.apvts, PEAK_QUALITY_NAME, peakQualitySlider),
+    lowCutFreqSliderAttachment(audioProcessor.apvts, LOW_CUT_FREQ_NAME, lowCutFreqSlider),
+    highCutFreqSliderAttachment(audioProcessor.apvts, HIGH_CUT_FREQ_NAME, highCutFreqSlider),
+    lowCutSlopeSliderAttachment(audioProcessor.apvts, LOW_CUT_SLOPE_NAME, lowCutSlopeSlider),
+    highCutSlopeSliderAttachment(audioProcessor.apvts, HIGH_CUT_SLOPE_NAME, highCutSlopeSlider),
+    lowCutBypassButtonAttachment(audioProcessor.apvts, LOW_CUT_BYPASS_NAME, lowCutBypassButton),
+    peakBypassButtonAttachment(audioProcessor.apvts, PEAK_BYPASS_NAME, peakBypassButton),
+    highCutBypassButtonAttachment(audioProcessor.apvts, HIGH_CUT_BYPASS_NAME, highCutBypassButton),
+    analyzerEnabledButtonAttachment(audioProcessor.apvts, ANALYZER_ENABLED_NAME, analyzerEnabledButton)
 {
     // Min/max range labels for each slider
-    peakFreqSlider.labels.add({ 0.f, "20Hz" });
-    peakFreqSlider.labels.add({ 1.f, "20KHz" });
-    peakGainSlider.labels.add({ 0.f, "-24dB" });
-    peakGainSlider.labels.add({ 1.f, "24dB" });
-    peakQualitySlider.labels.add({ 0.f, "0.1" });
-    peakQualitySlider.labels.add({ 1.f, "10.0" });
-    lowCutFreqSlider.labels.add({ 0.f, "20Hz" });
-    lowCutFreqSlider.labels.add({ 1.f, "20KHz" });
-    highCutFreqSlider.labels.add({ 0.f, "20Hz" });
-    highCutFreqSlider.labels.add({ 1.f, "20KHz" });
-    lowCutSlopeSlider.labels.add({ 0.f, "12dB/Oct" });
-    lowCutSlopeSlider.labels.add({ 1.f, "48dB/Oct" });
-    highCutSlopeSlider.labels.add({ 0.f, "12dB/Oct" });
-    highCutSlopeSlider.labels.add({ 1.f, "48dB/Oct" });
+    peakFreqSlider.labels.add({ SLIDER_MIN_RANGE, MIN_FREQ_LABEL });
+    peakFreqSlider.labels.add({ SLIDER_MAX_RANGE, MAX_FREQ_LABEL });
+    peakGainSlider.labels.add({ SLIDER_MIN_RANGE, MIN_GAIN_LABEL });
+    peakGainSlider.labels.add({ SLIDER_MAX_RANGE, MAX_GAIN_LABEL });
+    peakQualitySlider.labels.add({ SLIDER_MIN_RANGE, MIN_QUALITY_LABEL });
+    peakQualitySlider.labels.add({ SLIDER_MAX_RANGE, MAX_QUALITY_LABEL });
+    lowCutFreqSlider.labels.add({ SLIDER_MIN_RANGE, MIN_FREQ_LABEL });
+    lowCutFreqSlider.labels.add({ SLIDER_MAX_RANGE, MAX_FREQ_LABEL });
+    highCutFreqSlider.labels.add({ SLIDER_MIN_RANGE, MIN_FREQ_LABEL });
+    highCutFreqSlider.labels.add({ SLIDER_MAX_RANGE, MAX_FREQ_LABEL });
+    lowCutSlopeSlider.labels.add({ SLIDER_MIN_RANGE, MIN_SLOPE_LABEL });
+    lowCutSlopeSlider.labels.add({ SLIDER_MAX_RANGE, MAX_SLOPE_LABEL });
+    highCutSlopeSlider.labels.add({ SLIDER_MIN_RANGE, MIN_SLOPE_LABEL });
+    highCutSlopeSlider.labels.add({ SLIDER_MAX_RANGE, MAX_SLOPE_LABEL });
 
     for (juce::Component* comp : getComponents()) {
         addAndMakeVisible(comp);
@@ -598,33 +598,33 @@ void SimpleEQAudioProcessorEditor::resized()
     juce::Rectangle<int> bounds = getLocalBounds();
 
     juce::Rectangle<int> analyzerEnabledArea = bounds.removeFromTop(25);
-    analyzerEnabledArea.setWidth(100);
-    analyzerEnabledArea.setX(5);
-    analyzerEnabledArea.removeFromTop(2);
+    analyzerEnabledArea.setWidth(ANALYZER_ENABLED_BUTTON_WIDTH);
+    analyzerEnabledArea.setX(ANALYZER_ENABLED_BUTTON_X);
+    analyzerEnabledArea.removeFromTop(ANALYZER_ENABLED_BUTTON_TOP_REMOVAL);
 
     analyzerEnabledButton.setBounds(analyzerEnabledArea);
-    bounds.removeFromTop(5);
+    bounds.removeFromTop(DEFAULT_PADDING);
 
     float heightRatio = 25.0f / 100.f; // JUCE_LIVE_CONSTANT(33) / 100.f; //(use this to dial in the size while running plugin)
     juce::Rectangle<int> responseArea = bounds.removeFromTop(bounds.getHeight() * heightRatio);
 
     responseCurveComponent.setBounds(responseArea);
 
-    bounds.removeFromTop(5); // Create a little space between the response curve and dials
-    juce::Rectangle<int> lowCutArea = bounds.removeFromLeft(bounds.getWidth() * 0.33);
-    juce::Rectangle<int> highCutArea = bounds.removeFromRight(bounds.getWidth() * 0.5);
+    bounds.removeFromTop(DEFAULT_PADDING); // Create a little space between the response curve and dials
+    juce::Rectangle<int> lowCutArea = bounds.removeFromLeft(bounds.getWidth() * UI_BOUNDS_THIRD);
+    juce::Rectangle<int> highCutArea = bounds.removeFromRight(bounds.getWidth() * UI_BOUNDS_HALF);
 
-    lowCutBypassButton.setBounds(lowCutArea.removeFromTop(25));
-    lowCutFreqSlider.setBounds(lowCutArea.removeFromTop(lowCutArea.getHeight() * 0.5));
+    lowCutBypassButton.setBounds(lowCutArea.removeFromTop(BYPASS_BUTTON_HEIGHT));
+    lowCutFreqSlider.setBounds(lowCutArea.removeFromTop(lowCutArea.getHeight() * UI_BOUNDS_HALF));
     lowCutSlopeSlider.setBounds(lowCutArea);
 
-    highCutBypassButton.setBounds(highCutArea.removeFromTop(25));
-    highCutFreqSlider.setBounds(highCutArea.removeFromTop(highCutArea.getHeight() * 0.5));
+    highCutBypassButton.setBounds(highCutArea.removeFromTop(BYPASS_BUTTON_HEIGHT));
+    highCutFreqSlider.setBounds(highCutArea.removeFromTop(highCutArea.getHeight() * UI_BOUNDS_HALF));
     highCutSlopeSlider.setBounds(highCutArea);
 
-    peakBypassButton.setBounds(bounds.removeFromTop(25));
-    peakFreqSlider.setBounds(bounds.removeFromTop(bounds.getHeight() * 0.33));
-    peakGainSlider.setBounds(bounds.removeFromTop(bounds.getHeight() * 0.5));
+    peakBypassButton.setBounds(bounds.removeFromTop(BYPASS_BUTTON_HEIGHT));
+    peakFreqSlider.setBounds(bounds.removeFromTop(bounds.getHeight() * UI_BOUNDS_THIRD));
+    peakGainSlider.setBounds(bounds.removeFromTop(bounds.getHeight() * UI_BOUNDS_HALF));
     peakQualitySlider.setBounds(bounds);
 }
 

@@ -224,16 +224,16 @@ void SimpleEQAudioProcessor::setStateInformation (const void* data, int sizeInBy
 ChainSettings getChainSettings(juce::AudioProcessorValueTreeState& apvts) {
     ChainSettings settings;
 
-    settings.lowCutFreq = apvts.getRawParameterValue("LowCut Freq")->load();
-    settings.highCutFreq = apvts.getRawParameterValue("HighCut Freq")->load();
-    settings.peakFreq = apvts.getRawParameterValue("Peak Freq")->load();
-    settings.peakGainInDecibels = apvts.getRawParameterValue("Peak Gain")->load();
-    settings.peakQuality = apvts.getRawParameterValue("Peak Quality")->load();
-    settings.lowCutSlope = static_cast<Slope>(apvts.getRawParameterValue("LowCut Slope")->load());
-    settings.highCutSlope = static_cast<Slope>(apvts.getRawParameterValue("HighCut Slope")->load());
-    settings.lowCutBypassed = apvts.getRawParameterValue("LowCut Bypassed")->load() > 0.5f;
-    settings.peakBypassed = apvts.getRawParameterValue("Peak Bypassed")->load() > 0.5f;
-    settings.highCutBypassed = apvts.getRawParameterValue("HighCut Bypassed")->load() > 0.5f;
+    settings.lowCutFreq = apvts.getRawParameterValue(LOW_CUT_FREQ_NAME)->load();
+    settings.highCutFreq = apvts.getRawParameterValue(HIGH_CUT_FREQ_NAME)->load();
+    settings.peakFreq = apvts.getRawParameterValue(PEAK_FREQ_NAME)->load();
+    settings.peakGainInDecibels = apvts.getRawParameterValue(PEAK_GAIN_NAME)->load();
+    settings.peakQuality = apvts.getRawParameterValue(PEAK_QUALITY_NAME)->load();
+    settings.lowCutSlope = static_cast<Slope>(apvts.getRawParameterValue(LOW_CUT_SLOPE_NAME)->load());
+    settings.highCutSlope = static_cast<Slope>(apvts.getRawParameterValue(HIGH_CUT_SLOPE_NAME)->load());
+    settings.lowCutBypassed = apvts.getRawParameterValue(LOW_CUT_BYPASS_NAME)->load() > 0.5f; // If greater than .5, then true, else false
+    settings.peakBypassed = apvts.getRawParameterValue(PEAK_BYPASS_NAME)->load() > 0.5f;
+    settings.highCutBypassed = apvts.getRawParameterValue(HIGH_CUT_BYPASS_NAME)->load() > 0.5f;
 
     return settings;
 }
@@ -295,48 +295,48 @@ void SimpleEQAudioProcessor::updateFilters() {
 
 juce::AudioProcessorValueTreeState::ParameterLayout SimpleEQAudioProcessor::createParameterLayout() {
     juce::AudioProcessorValueTreeState::ParameterLayout layout;
-    layout.add(std::make_unique<juce::AudioParameterFloat>("LowCut Freq", 
-                                                           "LowCut Freq", 
-                                                           juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.25f), 
-                                                           20.f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(LOW_CUT_FREQ_NAME,
+                                                           LOW_CUT_FREQ_NAME,
+                                                           juce::NormalisableRange<float>(FILTER_MIN_HZ, FILTER_MAX_HZ, FILTER_FREQUENCY_INTERVAL, FILTER_FREQUENCY_SKEW_FACTOR), 
+                                                           LOW_CUT_FILTER_DEFAULT));
 
-    layout.add(std::make_unique<juce::AudioParameterFloat>("HighCut Freq",
-                                                           "HighCut Freq",
-                                                           juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.25f),
-                                                           20000.f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(HIGH_CUT_FREQ_NAME,
+                                                           HIGH_CUT_FREQ_NAME,
+                                                           juce::NormalisableRange<float>(FILTER_MIN_HZ, FILTER_MAX_HZ, FILTER_FREQUENCY_INTERVAL, FILTER_FREQUENCY_SKEW_FACTOR),
+                                                           HIGH_CUT_FILTER_DEFAULT));
 
     // mid band EQ
-    layout.add(std::make_unique<juce::AudioParameterFloat>("Peak Freq",
-                                                           "Peak Freq",
-                                                           juce::NormalisableRange<float>(20.f, 20000.f, 1.f, 0.25f),
-                                                           750.f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(PEAK_FREQ_NAME,
+                                                           PEAK_FREQ_NAME,
+                                                           juce::NormalisableRange<float>(FILTER_MIN_HZ, FILTER_MAX_HZ, FILTER_FREQUENCY_INTERVAL, FILTER_FREQUENCY_SKEW_FACTOR), 
+                                                           PEAK_FILTER_DEFAULT));
 
-    layout.add(std::make_unique<juce::AudioParameterFloat>("Peak Gain",
-                                                           "Peak Gain",
-                                                           juce::NormalisableRange<float>(-24.f, 24.f, 0.5f, 1.f),
-                                                           0.0f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(PEAK_GAIN_NAME,
+                                                           PEAK_GAIN_NAME,
+                                                           juce::NormalisableRange<float>(PEAK_GAIN_MIN_DB, PEAK_GAIN_MAX_DB, PEAK_GAIN_INTERVAL, DEFAULT_SKEW_FACTOR),
+                                                           PEAK_GAIN_DEFAULT));
     
     // "Q" factor of mid band
-    layout.add(std::make_unique<juce::AudioParameterFloat>("Peak Quality",
-                                                           "Peak Quality",
-                                                           juce::NormalisableRange<float>(0.1f, 10.f, 0.05f, 1.f),
-                                                           1.f));
+    layout.add(std::make_unique<juce::AudioParameterFloat>(PEAK_QUALITY_NAME,
+                                                           PEAK_QUALITY_NAME,
+                                                           juce::NormalisableRange<float>(PEAK_QUALITY_MIN, PEAK_QUALITY_MAX, PEAK_QUALITY_INTERVAL, DEFAULT_SKEW_FACTOR),
+                                                           PEAK_QUALITY_DEFAULT));
 
     juce::StringArray stringArray;
     for (int i = 0; i < 4; ++i) {
         juce::String str;
         str << (12 + i * 12);
-        str << " db/Oct";
+        str << " " << DB_PER_OCT;
         stringArray.add(str);
     }
 
-    layout.add(std::make_unique<juce::AudioParameterChoice>("LowCut Slope", "LowCut Slope", stringArray, 0));
-    layout.add(std::make_unique<juce::AudioParameterChoice>("HighCut Slope", "HichCut Slope", stringArray, 0));
+    layout.add(std::make_unique<juce::AudioParameterChoice>(LOW_CUT_SLOPE_NAME, LOW_CUT_SLOPE_NAME, stringArray, SLOPE_DEFAULT_POS));
+    layout.add(std::make_unique<juce::AudioParameterChoice>(HIGH_CUT_SLOPE_NAME, HIGH_CUT_SLOPE_NAME, stringArray, SLOPE_DEFAULT_POS));
 
-    layout.add(std::make_unique<juce::AudioParameterBool>("LowCut Bypassed", "LowCut Bypassed", false));
-    layout.add(std::make_unique<juce::AudioParameterBool>("Peak Bypassed", "Peak Bypassed", false));
-    layout.add(std::make_unique<juce::AudioParameterBool>("HighCut Bypassed", "HighCut Bypassed", false));
-    layout.add(std::make_unique<juce::AudioParameterBool>("Analyzer Enabled", "Analyzer Enabled", true));
+    layout.add(std::make_unique<juce::AudioParameterBool>(LOW_CUT_BYPASS_NAME, LOW_CUT_BYPASS_NAME, BYPASS_DEFAULT));
+    layout.add(std::make_unique<juce::AudioParameterBool>(PEAK_BYPASS_NAME, PEAK_BYPASS_NAME, BYPASS_DEFAULT));
+    layout.add(std::make_unique<juce::AudioParameterBool>(HIGH_CUT_BYPASS_NAME, HIGH_CUT_BYPASS_NAME, BYPASS_DEFAULT));
+    layout.add(std::make_unique<juce::AudioParameterBool>(ANALYZER_ENABLED_NAME, ANALYZER_ENABLED_NAME, ENABLED_DEFAULT));
 
     return layout;
 }

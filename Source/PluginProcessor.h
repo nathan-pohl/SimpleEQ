@@ -9,8 +9,9 @@
 #pragma once
 
 #include <JuceHeader.h>
-
 #include <array>
+#include "Constants.h"
+
 // Note: this struct was not covered in the course, just had to copy it
 // Used by GUI thread to process blocks
 template<typename T>

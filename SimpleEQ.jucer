@@ -5,6 +5,7 @@
               cppLanguageStandard="17">
   <MAINGROUP id="HwO1Pr" name="SimpleEQ">
     <GROUP id="{2BB35D32-FEA4-F1EE-4B08-6F0A9BDFEF6D}" name="Source">
+      <FILE id="qHUYFg" name="Constants.h" compile="0" resource="0" file="Source/Constants.h"/>
       <FILE id="HAJjUk" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="WmladK" name="PluginProcessor.h" compile="0" resource="0"
