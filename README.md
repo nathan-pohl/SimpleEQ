@@ -1,6 +1,8 @@
 SimpleEQ is a plugin based off of a youtube course by MatKat Music. 
 The differences between this project and the original are mostly in code style, with a few improvements to organization and coding practices thrown in.
+
 [Original Youtube Video](https://youtu.be/i_Iq4_Kd7Rc)
+
 [Original Github Repo](https://github.com/matkatmusic/SimpleEQ)
 
 <img title="Plugin UI" src="/docs/SimpleEQ.PNG">
